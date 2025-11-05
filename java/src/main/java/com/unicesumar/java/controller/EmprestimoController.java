@@ -1,6 +1,7 @@
 package com.unicesumar.java.controller;
 
 import com.unicesumar.java.entity.Emprestimo;
+import com.unicesumar.java.repository.EmprestimoRepository;
 import com.unicesumar.java.service.EmprestimoService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -55,5 +56,14 @@ public class EmprestimoController {
         public void setItemId(Long itemId) {
             this.itemId = itemId;
         }
+    }
+
+    @Autowired
+    private EmprestimoRepository emprestimoRepository;
+
+    // --- Novo endpoint para listar todos os empréstimos ativos ---
+    @GetMapping("/ativos")
+    public List<Emprestimo> listarAtivos() {
+        return emprestimoRepository.findByDataDevolucaoRealIsNull();
     }
 }

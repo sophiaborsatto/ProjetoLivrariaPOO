@@ -92,15 +92,18 @@ async function carregarUsuarios() {
     tabelaUsuarios.innerHTML = ""; // Limpa a tabela
     selectUsuario.innerHTML = '<option value="">--Selecione um usuário--</option>'; // Limpa o dropdown
 
-    usuarios.forEach(user => {
-      // Adiciona na Tabela
-      const tr = document.createElement("tr");
-      tr.innerHTML = `
-        <td>${user.id}</td>
-        <td>${user.nome}</td>
-        <td>${user.multaPendente.toFixed(2)}</td>
-      `;
-      tabelaUsuarios.appendChild(tr);
+   usuarios.forEach(user => {
+     const tr = document.createElement("tr");
+     tr.innerHTML = `
+       <td>${user.id}</td>
+       <td>${user.nome}</td>
+       <td>${user.multaPendente.toFixed(2)}</td>
+      <td>
+        <button class="warning" onclick="aplicarMulta(${user.id})">⚠️ Aplicar Multa</button>
+        <button class="success" onclick="retirarMulta(${user.id})">✅ Retirar Multa</button>
+      </td>
+     `;
+     tabelaUsuarios.appendChild(tr);
 
       // Adiciona no Dropdown de Empréstimo
       const option = document.createElement("option");
@@ -114,19 +117,35 @@ async function carregarUsuarios() {
   }
 }
 
-/** Busca e mostra os EMPRÉSTIMOS ATIVOS na tabela */
+/** Busca e mostra TODOS os EMPRÉSTIMOS ATIVOS na tabela */
 async function carregarEmprestimosAtivos() {
-  // Nota: A API que criamos não tem um "listar todos".
-  // Para um sistema real, precisaríamos de um GET /emprestimos/ativos
-  // Vamos carregar os do usuário 1 como exemplo, ou idealmente,
-  // você selecionaria um usuário para ver os empréstimos dele.
-  // Por simplicidade, vamos deixar a tabela de empréstimos ser preenchida
-  // apenas quando fizermos um novo empréstimo.
-  // ... (Vamos simplificar e não carregar nada aqui por enquanto)
-  // ... Vamos carregar os empréstimos de TODOS os usuários
-  // ... Ops, nossa API só tem "GET /emprestimos/usuario/{usuarioId}/ativos"
-  // ... Para este projeto, vamos pular o carregamento inicial de empréstimos.
-  tabelaEmprestimos.innerHTML = ""; // Apenas limpa
+  try {
+    const resp = await fetch(`${API.emprestimos}/ativos`);
+    if (!resp.ok) throw new Error("Erro ao buscar empréstimos.");
+
+    const emprestimos = await resp.json();
+
+    tabelaEmprestimos.innerHTML = ""; // Limpa a tabela antes de repopular
+
+    emprestimos.forEach(emprestimo => {
+      const tr = document.createElement("tr");
+      tr.id = `emprestimo-${emprestimo.id}`;
+      tr.innerHTML = `
+        <td>${emprestimo.id}</td>
+        <td>${emprestimo.item.id} (${emprestimo.item.titulo})</td>
+        <td>${emprestimo.usuario.id} (${emprestimo.usuario.nome})</td>
+        <td>${emprestimo.dataEmprestimo || '-'}</td>
+        <td>${emprestimo.dataPrevistaDevolucao || '-'}</td>
+        <td>
+          <button class="danger" onclick="devolverItem(${emprestimo.id})">↩️ Devolver</button>
+        </td>
+      `;
+      tabelaEmprestimos.appendChild(tr);
+    });
+  } catch (err) {
+    console.error("Erro ao carregar empréstimos ativos:", err);
+    alert("Não foi possível carregar os empréstimos ativos.");
+  }
 }
 
 
@@ -265,9 +284,10 @@ formEmprestimo.addEventListener("submit", async (e) => {
     alert("Empréstimo realizado com sucesso!");
 
   } catch (err) {
-    console.error("Erro ao realizar empréstimo:", err);
-    alert(`Falha no Empréstimo: ${err.message}`);
-  }
+      console.error("Erro ao realizar empréstimo:", err);
+      alert(`Falha no Empréstimo: ${err.message}`);
+      carregarEmprestimosAtivos(); // <-- adiciona aqui
+    }
 });
 
 
@@ -321,6 +341,52 @@ async function devolverItem(idEmprestimo) {
   } catch (err) {
      console.error("Erro ao devolver item:", err);
      alert(`Erro: ${err.message}`);
+  }
+}
+
+/** Aplica multa manualmente a um usuário */
+async function aplicarMulta(usuarioId) {
+  if (!confirm(`Deseja aplicar uma multa de R$ 10,00 ao usuário ${usuarioId}?`)) return;
+
+  try {
+    const resp = await fetch(`${API.usuarios}/${usuarioId}/multa`, {
+      method: "POST"
+    });
+
+    if (!resp.ok) {
+      const erro = await resp.text();
+      throw new Error(erro || "Erro ao aplicar multa.");
+    }
+
+    alert("Multa aplicada com sucesso!");
+    carregarUsuarios(); // Atualiza a tabela
+
+  } catch (err) {
+    console.error("Erro ao aplicar multa:", err);
+    alert(`Erro: ${err.message}`);
+  }
+}
+
+/** Retira multa manualmente de um usuário */
+async function retirarMulta(usuarioId) {
+  if (!confirm(`Deseja remover todas as multas do usuário ${usuarioId}?`)) return;
+
+  try {
+    const resp = await fetch(`${API.usuarios}/${usuarioId}/retirar-multa`, {
+      method: "POST"
+    });
+
+    if (!resp.ok) {
+      const erro = await resp.text();
+      throw new Error(erro || "Erro ao retirar multa.");
+    }
+
+    alert("Multa removida com sucesso!");
+    carregarUsuarios(); // Atualiza a tabela
+
+  } catch (err) {
+    console.error("Erro ao retirar multa:", err);
+    alert(`Erro: ${err.message}`);
   }
 }
 

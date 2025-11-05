@@ -92,3 +92,23 @@ th {
 .hidden {
   display: none;
 }
+
+button.warning {
+  background: #ffc107;
+  color: #000;
+  margin-left: 10px;
+}
+
+button.warning:hover {
+  background: #e0a800;
+}
+
+button.success {
+  background: #28a745;
+  color: #fff;
+  margin-left: 10px;
+}
+
+button.success:hover {
+  background: #218838;
+}
