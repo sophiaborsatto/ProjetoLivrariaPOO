@@ -1,122 +1,348 @@
-const API_URL = "http://localhost:8090/livros";
+// --- 1. DEFINIÇÃO DAS URLs DA API ---
+// Definimos as URLs base para cada "parte" da nossa API
+const API = {
+  itens: "http://localhost:8090/itens",
+  usuarios: "http://localhost:8090/usuarios",
+  emprestimos: "http://localhost:8090/emprestimos",
+};
 
-const tabela = document.getElementById("tabela-livros");
-const form = document.getElementById("livro-form");
-const idInput = document.getElementById("livro-id");
-const tituloInput = document.getElementById("titulo");
-const autorInput = document.getElementById("autor");
-const anoInput = document.getElementById("ano");
-const formTitle = document.getElementById("form-title");
-const cancelarBtn = document.getElementById("cancelar");
+// --- 2. "PEGANDO" OS ELEMENTOS DO HTML ---
+// Formulários
+const formItem = document.getElementById("form-item");
+const formUsuario = document.getElementById("form-usuario");
+const formEmprestimo = document.getElementById("form-emprestimo");
 
-async function carregarLivros() {
+// Campos do Form de Itens
+const itemTipoSelect = document.getElementById("item-tipo");
+const itemTituloInput = document.getElementById("item-titulo");
+const itemAnoInput = document.getElementById("item-ano");
+const campoLivro = document.getElementById("campo-livro");
+const itemAutorInput = document.getElementById("item-autor");
+const campoPeriodico = document.getElementById("campo-periodico");
+const itemTipoPeriodicoSelect = document.getElementById("item-tipo-periodico");
+
+// Campos do Form de Usuário
+const usuarioNomeInput = document.getElementById("usuario-nome");
+
+// Campos do Form de Empréstimo
+const selectUsuario = document.getElementById("select-usuario");
+const selectItem = document.getElementById("select-item");
+
+// Tabelas (onde os dados são mostrados)
+const tabelaItens = document.getElementById("tabela-itens");
+const tabelaUsuarios = document.getElementById("tabela-usuarios");
+const tabelaEmprestimos = document.getElementById("tabela-emprestimos");
+
+// --- 3. LÓGICA DE CARREGAMENTO DE DADOS (GET) ---
+
+/** Carrega TODOS os dados da API quando a página abre
+ * e atualiza tudo.
+ */
+async function carregarTudo() {
+  await carregarItens();
+  await carregarUsuarios();
+  await carregarEmprestimosAtivos();
+}
+
+/** Busca e mostra os ITENS na tabela */
+async function carregarItens() {
   try {
-    const resp = await fetch(API_URL);
-    if (!resp.ok) throw new Error("Erro ao carregar livros");
+    const resp = await fetch(API.itens);
+    const itens = await resp.json();
 
-    const livros = await resp.json();
-    tabela.innerHTML = "";
+    tabelaItens.innerHTML = ""; // Limpa a tabela
+    selectItem.innerHTML = '<option value="">--Selecione um item--</option>'; // Limpa o dropdown
 
-    livros.forEach(livro => {
+    itens.forEach(item => {
+      // Adiciona na Tabela
       const tr = document.createElement("tr");
       tr.innerHTML = `
-        <td>${livro.id}</td>
-        <td>${livro.titulo}</td>
-        <td>${livro.autor}</td>
-        <td>${livro.ano}</td>
+        <td>${item.id}</td>
+        <td>${item.titulo}</td>
+        <td>${item.anoPublicacao}</td>
+        <td>${item.tipo_item}</td>
+        <td>${item.autor || item.tipo || 'N/A'}</td>
+        <td>${item.disponivel ? '✅ Sim' : '❌ Não'}</td>
         <td>
-          <button onclick="editarLivro(${livro.id})">✏️</button>
-          <button onclick="deletarLivro(${livro.id})" style="background:#dc3545">🗑️</button>
+          <button class="danger" onclick="deletarItem(${item.id})">🗑️ Excluir</button>
         </td>
       `;
-      tabela.appendChild(tr);
+      tabelaItens.appendChild(tr);
+
+      // Adiciona no Dropdown de Empréstimo (SÓ SE ESTIVER DISPONÍVEL)
+      if (item.disponivel) {
+        const option = document.createElement("option");
+        option.value = item.id;
+        option.textContent = `(ID ${item.id}) ${item.titulo}`;
+        selectItem.appendChild(option);
+      }
     });
   } catch (err) {
-    console.error(err);
-    alert("Erro ao buscar livros do servidor.");
+    console.error("Erro ao carregar itens:", err);
+    alert("Não foi possível carregar os itens do acervo.");
   }
 }
 
-form.addEventListener("submit", async (e) => {
+/** Busca e mostra os USUÁRIOS na tabela */
+async function carregarUsuarios() {
+  try {
+    const resp = await fetch(API.usuarios);
+    const usuarios = await resp.json();
+
+    tabelaUsuarios.innerHTML = ""; // Limpa a tabela
+    selectUsuario.innerHTML = '<option value="">--Selecione um usuário--</option>'; // Limpa o dropdown
+
+    usuarios.forEach(user => {
+      // Adiciona na Tabela
+      const tr = document.createElement("tr");
+      tr.innerHTML = `
+        <td>${user.id}</td>
+        <td>${user.nome}</td>
+        <td>${user.multaPendente.toFixed(2)}</td>
+      `;
+      tabelaUsuarios.appendChild(tr);
+
+      // Adiciona no Dropdown de Empréstimo
+      const option = document.createElement("option");
+      option.value = user.id;
+      option.textContent = `(ID ${user.id}) ${user.nome}`;
+      selectUsuario.appendChild(option);
+    });
+  } catch (err) {
+    console.error("Erro ao carregar usuários:", err);
+    alert("Não foi possível carregar os usuários.");
+  }
+}
+
+/** Busca e mostra os EMPRÉSTIMOS ATIVOS na tabela */
+async function carregarEmprestimosAtivos() {
+  // Nota: A API que criamos não tem um "listar todos".
+  // Para um sistema real, precisaríamos de um GET /emprestimos/ativos
+  // Vamos carregar os do usuário 1 como exemplo, ou idealmente,
+  // você selecionaria um usuário para ver os empréstimos dele.
+  // Por simplicidade, vamos deixar a tabela de empréstimos ser preenchida
+  // apenas quando fizermos um novo empréstimo.
+  // ... (Vamos simplificar e não carregar nada aqui por enquanto)
+  // ... Vamos carregar os empréstimos de TODOS os usuários
+  // ... Ops, nossa API só tem "GET /emprestimos/usuario/{usuarioId}/ativos"
+  // ... Para este projeto, vamos pular o carregamento inicial de empréstimos.
+  tabelaEmprestimos.innerHTML = ""; // Apenas limpa
+}
+
+
+// --- 4. LÓGICA DE CRIAÇÃO (POST) ---
+
+/** Ouve o 'submit' do formulário de ITENS */
+formItem.addEventListener("submit", async (e) => {
+  e.preventDefault(); // Impede o recarregamento da página
+
+  // Monta o objeto JSON baseado no que foi selecionado
+  const itemJSON = {
+    titulo: itemTituloInput.value,
+    anoPublicacao: parseInt(itemAnoInput.value),
+    tipo_item: itemTipoSelect.value, // "LIVRO" ou "PERIODICO"
+  };
+
+  if (itemJSON.tipo_item === "LIVRO") {
+    itemJSON.autor = itemAutorInput.value;
+  } else if (itemJSON.tipo_item === "PERIODICO") {
+    itemJSON.tipo = itemTipoPeriodicoSelect.value; // "REVISTA" ou "JORNAL"
+  }
+
+  try {
+    const resp = await fetch(API.itens, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(itemJSON),
+    });
+
+    if (!resp.ok) {
+      // Se der erro (ex: 400 Bad Request, 500 Erro), o 'fetch' não dá 'catch'
+      // Nós temos que forçar o erro
+      const erro = await resp.json();
+      throw new Error(erro.message || "Erro ao salvar item.");
+    }
+
+    formItem.reset(); // Limpa o formulário
+    campoLivro.classList.add("hidden"); // Esconde os campos condicionais
+    campoPeriodico.classList.add("hidden");
+    
+    carregarTudo(); // Recarrega todas as tabelas
+    alert("Item salvo com sucesso!");
+
+  } catch (err) {
+    console.error("Erro ao salvar item:", err);
+    alert(`Erro: ${err.message}`);
+  }
+});
+
+/** Ouve o 'submit' do formulário de USUÁRIO */
+formUsuario.addEventListener("submit", async (e) => {
   e.preventDefault();
 
-  const livro = {
-    titulo: tituloInput.value.trim(),
-    autor: autorInput.value.trim(),
-    ano: parseInt(anoInput.value)
+  const usuarioJSON = {
+    nome: usuarioNomeInput.value
   };
 
   try {
-    let resp;
-    if (idInput.value) {
-      // Atualizar
-      resp = await fetch(`${API_URL}/${idInput.value}`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(livro)
-      });
-    } else {
-      // Criar novo
-      resp = await fetch(API_URL, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(livro)
-      });
-    }
+    const resp = await fetch(API.usuarios, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(usuarioJSON),
+    });
+    
+    if (!resp.ok) throw new Error("Erro ao salvar usuário.");
 
-    if (!resp.ok) throw new Error("Erro ao salvar livro");
+    formUsuario.reset();
+    carregarTudo(); // Recarrega tudo
+    alert("Usuário salvo com sucesso!");
 
-    form.reset();
-    idInput.value = "";
-    formTitle.textContent = "Adicionar Livro";
-    cancelarBtn.classList.add("hidden");
-
-    carregarLivros();
   } catch (err) {
-    console.error(err);
-    alert("Falha ao salvar o livro.");
+    console.error("Erro ao salvar usuário:", err);
+    alert("Erro ao salvar usuário.");
   }
 });
 
-async function editarLivro(id) {
-  try {
-    const resp = await fetch(`${API_URL}/${id}`);
-    if (!resp.ok) throw new Error("Erro ao buscar livro");
+/** Ouve o 'submit' do formulário de EMPRÉSTIMO */
+formEmprestimo.addEventListener("submit", async (e) => {
+  e.preventDefault();
 
-    const livro = await resp.json();
-    idInput.value = livro.id;
-    tituloInput.value = livro.titulo;
-    autorInput.value = livro.autor;
-    anoInput.value = livro.ano;
+  const emprestimoJSON = {
+    usuarioId: parseInt(selectUsuario.value),
+    itemId: parseInt(selectItem.value)
+  };
 
-    formTitle.textContent = "Editar Livro";
-    cancelarBtn.classList.remove("hidden");
-  } catch (err) {
-    console.error(err);
-    alert("Erro ao buscar dados do livro.");
+  if (!emprestimoJSON.usuarioId || !emprestimoJSON.itemId) {
+    alert("Por favor, selecione um usuário e um item.");
+    return;
   }
-}
 
-async function deletarLivro(id) {
-  if (!confirm("Deseja realmente excluir este livro?")) return;
   try {
-    const resp = await fetch(`${API_URL}/${id}`, { method: "DELETE" });
-    if (resp.ok) {
-      carregarLivros();
-    } else {
-      alert("Erro ao deletar livro.");
+    const resp = await fetch(API.emprestimos, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(emprestimoJSON),
+    });
+
+    if (!resp.ok) {
+      // Pega a mensagem de erro da nossa API (ex: "Usuário atingiu o limite")
+      const erroTexto = await resp.text(); // RuntimeException joga texto, não JSON
+      // Tenta extrair a mensagem do erro 500 do Spring
+      let mensagem = erroTexto;
+      try {
+        const erroJson = JSON.parse(erroTexto);
+        mensagem = erroJson.message;
+      } catch(e) {
+        // Se não for JSON, usa o texto puro (que deve ser a msg da RuntimeException)
+        // Isso é uma gambiarra, mas funciona pra pegar nossa RuntimeException
+        if (erroTexto.includes("java.lang.RuntimeException:")) {
+            mensagem = erroTexto.split("java.lang.RuntimeException:")[1].split("\n")[0];
+        }
+      }
+      throw new Error(mensagem);
     }
-  } catch (err) {
-    console.error(err);
-    alert("Erro de conexão com o servidor.");
-  }
-}
+    
+    const emprestimoFeito = await resp.json();
+    
+    // Adiciona o novo empréstimo na tabela de ativos (manualmente)
+    const tr = document.createElement("tr");
+    tr.id = `emprestimo-${emprestimoFeito.id}`; // Dá um ID para a linha
+    tr.innerHTML = `
+      <td>${emprestimoFeito.id}</td>
+      <td>${emprestimoFeito.item.id} (${emprestimoFeito.item.titulo})</td>
+      <td>${emprestimoFeito.usuario.id} (${emprestimoFeito.usuario.nome})</td>
+      <td>${emprestimoFeito.dataEmprestimo}</td>
+      <td>${emprestimoFeito.dataPrevistaDevolucao}</td>
+      <td>
+        <button class="danger" onclick="devolverItem(${emprestimoFeito.id})">↩️ Devolver</button>
+      </td>
+    `;
+    tabelaEmprestimos.appendChild(tr);
 
-cancelarBtn.addEventListener("click", () => {
-  form.reset();
-  idInput.value = "";
-  formTitle.textContent = "Adicionar Livro";
-  cancelarBtn.classList.add("hidden");
+    formEmprestimo.reset();
+    carregarItens(); // Recarrega os itens (para atualizar o dropdown e a tabela de disponíveis)
+    carregarUsuarios(); // Recarrega usuários (para atualizar multas, se houver)
+    alert("Empréstimo realizado com sucesso!");
+
+  } catch (err) {
+    console.error("Erro ao realizar empréstimo:", err);
+    alert(`Falha no Empréstimo: ${err.message}`);
+  }
 });
 
-carregarLivros();
+
+// --- 5. LÓGICA DE AÇÕES (DELETE / PUT / POST de Ação) ---
+
+/** Deleta um ITEM do acervo */
+async function deletarItem(id) {
+  if (!confirm(`Deseja realmente excluir o item ${id} do acervo?`)) return;
+
+  try {
+    const resp = await fetch(`${API.itens}/${id}`, { method: "DELETE" });
+    if (!resp.ok) throw new Error("Erro ao deletar item.");
+
+    carregarTudo(); // Recarrega tudo
+    alert("Item excluído com sucesso.");
+  } catch (err) {
+    console.error("Erro ao deletar item:", err);
+    alert("Erro ao deletar item.");
+  }
+}
+
+/** Devolve um item emprestado */
+async function devolverItem(idEmprestimo) {
+  if (!confirm(`Deseja confirmar a devolução deste item?`)) return;
+  
+  try {
+    const resp = await fetch(`${API.emprestimos}/${idEmprestimo}/devolver`, {
+      method: "POST"
+    });
+
+    if (!resp.ok) {
+       const erro = await resp.json();
+       throw new Error(erro.message || "Erro ao devolver item.");
+    }
+    
+    const emprestimoFechado = await resp.json();
+    
+    // Remove a linha da tabela de "Empréstimos Ativos"
+    const linhaDoEmprestimo = document.getElementById(`emprestimo-${idEmprestimo}`);
+    if (linhaDoEmprestimo) {
+      linhaDoEmprestimo.remove();
+    }
+    
+    carregarItens(); // Recarrega os itens (agora ele está disponível)
+    carregarUsuarios(); // Recarrega usuários (para atualizar saldo de multa)
+    
+    // Verifica se gerou multa
+    const multaGerada = emprestimoFechado.usuario.multaPendente;
+    alert("Item devolvido! Saldo de multa atualizado.");
+
+  } catch (err) {
+     console.error("Erro ao devolver item:", err);
+     alert(`Erro: ${err.message}`);
+  }
+}
+
+// --- 6. LÓGICA DE UI (Interface do Usuário) ---
+
+/** Ouve a mudança no dropdown de tipo de item */
+itemTipoSelect.addEventListener("change", () => {
+  const tipo = itemTipoSelect.value;
+
+  if (tipo === "LIVRO") {
+    campoLivro.classList.remove("hidden");
+    campoPeriodico.classList.add("hidden");
+  } else if (tipo === "PERIODICO") {
+    campoLivro.classList.add("hidden");
+    campoPeriodico.classList.remove("hidden");
+  } else {
+    campoLivro.classList.add("hidden");
+    campoPeriodico.classList.add("hidden");
+  }
+});
+
+
+// --- 7. INICIALIZAÇÃO ---
+// Carrega todos os dados do backend assim que a página é aberta.
+document.addEventListener("DOMContentLoaded", carregarTudo);

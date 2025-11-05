@@ -3,49 +3,123 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>CRUD de Livros</title>
+  <title>Gestão da Biblioteca</title>
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
-  <h1>📚 CRUD de Livros</h1>
+<h1>📚 Sistema de Gestão da Biblioteca</h1>
 
-  <section id="form-section">
-    <h2 id="form-title">Adicionar Livro</h2>
-    <form id="livro-form">
-      <input type="hidden" id="livro-id">
+<section class="container">
+  <h2>Gerenciar Acervo</h2>
+  <form id="form-item">
+    <label for="item-tipo">Tipo de Item:</label>
+    <select id="item-tipo" required>
+      <option value="">--Selecione--</option>
+      <option value="LIVRO">Livro</option>
+      <option value="PERIODICO">Periódico</option>
+    </select>
 
-      <label for="titulo">Título:</label>
-      <input type="text" id="titulo" placeholder="Digite o título" required>
+    <label for="item-titulo">Título:</label>
+    <input type="text" id="item-titulo" placeholder="Digite o título" required>
 
-      <label for="autor">Autor:</label>
-      <input type="text" id="autor" placeholder="Digite o autor" required>
+    <label for="item-ano">Ano de Publicação:</label>
+    <input type="number" id="item-ano" placeholder="Digite o ano" required>
 
-      <label for="ano">Ano:</label>
-      <input type="number" id="ano" placeholder="Digite o ano" required>
+    <div id="campo-livro" class="campo-condicional hidden">
+      <label for="item-autor">Autor:</label>
+      <input type="text" id="item-autor" placeholder="Digite o autor">
+    </div>
 
-      <div class="botoes">
-        <button type="submit">Salvar</button>
-        <button type="button" id="cancelar" class="hidden">Cancelar</button>
-      </div>
-    </form>
-  </section>
+    <div id="campo-periodico" class="campo-condicional hidden">
+      <label for="item-tipo-periodico">Tipo de Periódico:</label>
+      <select id="item-tipo-periodico">
+        <option value="REVISTA">Revista</option>
+        <option value="JORNAL">Jornal</option>
+      </select>
+    </div>
 
-  <section id="lista-section">
-    <h2>Lista de Livros</h2>
-    <table>
-      <thead>
-        <tr>
-          <th>ID</th>
-          <th>Título</th>
-          <th>Autor</th>
-          <th>Ano</th>
-          <th>Ações</th>
-        </tr>
-      </thead>
-      <tbody id="tabela-livros"></tbody>
-    </table>
-  </section>
+    <div class="botoes">
+      <button type="submit">Adicionar Item ao Acervo</button>
+    </div>
+  </form>
 
-  <script src="script.js"></script>
+  <h3>Itens no Acervo</h3>
+  <table>
+    <thead>
+    <tr>
+      <th>ID</th>
+      <th>Título</th>
+      <th>Ano</th>
+      <th>Tipo</th>
+      <th>Detalhe (Autor/Tipo)</th>
+      <th>Disponível?</th>
+      <th>Ações</th>
+    </tr>
+    </thead>
+    <tbody id="tabela-itens">
+    </tbody>
+  </table>
+</section>
+
+<section class="container">
+  <h2>Gerenciar Usuários</h2>
+  <form id="form-usuario">
+    <label for="usuario-nome">Nome do Usuário:</label>
+    <input type="text" id="usuario-nome" placeholder="Digite o nome" required>
+    <div class="botoes">
+      <button type="submit">Cadastrar Usuário</button>
+    </div>
+  </form>
+
+  <h3>Usuários Cadastrados</h3>
+  <table>
+    <thead>
+    <tr>
+      <th>ID</th>
+      <th>Nome</th>
+      <th>Multa Pendente (R$)</th>
+    </tr>
+    </thead>
+    <tbody id="tabela-usuarios">
+    </tbody>
+  </table>
+</section>
+
+<section class="container">
+  <h2>Realizar Empréstimo</h2>
+  <form id="form-emprestimo">
+    <label for="select-usuario">Usuário:</label>
+    <select id="select-usuario" required>
+      <option value="">--Selecione um usuário--</option>
+    </select>
+
+    <label for="select-item">Item (Somente disponíveis):</label>
+    <select id="select-item" required>
+      <option value="">--Selecione um item--</option>
+    </select>
+
+    <div class="botoes">
+      <button type="submit">Realizar Empréstimo</button>
+    </div>
+  </form>
+
+  <h3>Empréstimos Ativos (Não devolvidos)</h3>
+  <table>
+    <thead>
+    <tr>
+      <th>ID Empréstimo</th>
+      <th>Item (ID)</th>
+      <th>Usuário (ID)</th>
+      <th>Data Empréstimo</th>
+      <th>Data Devolução (Prevista)</th>
+      <th>Ações</th>
+    </tr>
+    </thead>
+    <tbody id="tabela-emprestimos">
+    </tbody>
+  </table>
+</section>
+
+<script src="script.js"></script>
 </body>
 </html>
